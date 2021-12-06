@@ -7,10 +7,10 @@ import matplotlib.pyplot as image
 import pathlib
 import glob
 import imutils
-import PIL
+import pickle
 
-# Import image
-# frame = image.imread('sample\pic1.jpg')
+#Load model
+loaded_model = pickle.load(open('knn_model.pkl', 'rb'))
 
 MODEL = 'yolo\yolov3-face.cfg'
 WEIGHT = 'yolo\yolov3-wider_16000.weights'
@@ -18,8 +18,16 @@ WEIGHT = 'yolo\yolov3-wider_16000.weights'
 net = cv2.dnn.readNetFromDarknet(MODEL, WEIGHT)
 net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
 net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-
 IMG_WIDTH, IMG_HEIGHT = 416, 416
+
+#function preprocess image
+def preprocess(face_image):
+    img = cv2.resize(face_image, (300, 300), interpolation = cv2.INTER_AREA)
+    img = img / 255.
+    img = img.flatten()
+    return img
+
+
 # Set up camera
 cap = cv2.VideoCapture(0)
 
@@ -74,26 +82,38 @@ while True:
 
     #result = frame.copy()
     final_boxes = []
+    crop_faces = []
+    recog = []
     for i in indices:
         i = i[0]
         box = boxes[i]
         final_boxes.append(box)
 
         # Extract position data
-        left = box[0]
-        top = box[1]
-        width = box[2]
-        height = box[3]
+        left = int(box[0])
+        top = int(box[1])
+        width = int(box[2])
+        height = int(box[3])
 
     # Draw bouding box with the above measurements
-        cv2.rectangle(frame, (np.int64(left),np.int64(top)), (np.int64(left+width), np.int64(top+height)), (0,255,255),2)
+        cv2.rectangle(frame, (left,top), ((left+width), (top+height)), (0,255,255),2)
         # Display text about confidence rate above each box
         text = f'{confidences[i]:.2f}'
-        cv2.putText(frame, text, (np.int64(left), np.int64(top)-2), cv2.FONT_HERSHEY_SIMPLEX,0.5, (0,255,0),1)
+        cv2.putText(frame, text, (left+10, top-2), cv2.FONT_HERSHEY_SIMPLEX,0.5, (0,255,0),1)
+
+    # Crop faces
+        face = frame[left:left+width, top:top+height]
+        crop_faces.append(face)
+    # Preprocess
+        faces_edited = np.array(list(map(preprocess, crop_faces)))
+    # Predict crop faces
+        recog.append([loaded_model.predict([faces_edited])[0]])
+        name = f'{recog[i]}'
+        cv2.putText(frame, name, (left, top-2), cv2.FONT_HERSHEY_SIMPLEX,0.5, (0,255,0),1)
 
     # Display text about number of detected faces on topleft corner
     total = f'number of detected faces: {len(final_boxes)}'
-    cv2.putText(frame, total, (15, 15), cv2.FONT_HERSHEY_SIMPLEX,0.5, (0,220,0),2,)
+    cv2.putText(frame, total, (15, 15), cv2.FONT_HERSHEY_SIMPLEX,0.5, (0,255,0),2,)
     cv2.imshow('face detection', frame)
 
     # frame is now the image capture by the webcam (one frame of the video)
@@ -107,7 +127,4 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 
-# Detect face
 
-# Making blob object from original image
-#frame = cv2.imread(cap)

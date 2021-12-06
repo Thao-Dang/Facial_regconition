@@ -7,6 +7,10 @@ import matplotlib.pyplot as image
 import pathlib
 import glob
 import imutils
+import pickle
+
+#Load model
+loaded_model = pickle.load(open('knn_model.pkl', 'rb'))
 
 MODEL = 'yolo\yolov3-face.cfg'
 WEIGHT = 'yolo\yolov3-wider_16000.weights'
@@ -15,6 +19,14 @@ net = cv2.dnn.readNetFromDarknet(MODEL, WEIGHT)
 net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
 net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 IMG_WIDTH, IMG_HEIGHT = 416, 416
+
+#function preprocess image
+def preprocess(face_image):
+    img = cv2.resize(face_image, (300, 300), interpolation = cv2.INTER_AREA)
+    img = img / 255.
+    img = img.flatten()
+    return img
+
 # Import image
 frame = cv2.imread('sample\pic1.jpg')
 

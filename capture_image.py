@@ -23,17 +23,18 @@ while(True):
     cv2.imshow('frame',frame)
 
     # Save data to folder
-    if i>=200 and i<=250: #capture 1000 frames
-        print("Number of photos capture = ",i-200)
+    if i>=100 and i<=450: #capture 1000 frames
+        print("Number of photos capture = ",i-100)
         # Create folder con
         if not os.path.exists('data' + str(label)):
             os.mkdir('data' + str(label))
 
         cv2.imwrite('data' + str(label) + "/" + str(i) + ".png",frame)
-        sleep(2)
+        sleep(1)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
+
